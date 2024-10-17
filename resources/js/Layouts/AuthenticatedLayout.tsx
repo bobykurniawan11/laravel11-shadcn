@@ -91,7 +91,6 @@ export default function AuthenticatedLayout({
                         </form>
 
                         <div className="space-x-4">
-                            <ThemeSwitcher />
                             <AppearanceDropdown />
 
                             <DropdownMenu>
