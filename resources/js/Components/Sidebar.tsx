@@ -1,7 +1,7 @@
 import { Link, usePage } from "@inertiajs/react";
-import { AlignJustifyIcon, Home, Icon } from "lucide-react";
+import { AlignJustifyIcon, Home, Icon, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { buttonVariants } from "@/Components/ui/button";
+import { Button, buttonVariants } from "@/Components/ui/button";
 import {
     Tooltip,
     TooltipContent,
@@ -10,11 +10,13 @@ import {
 } from "@/Components/ui/tooltip";
 import { MenuItemProp } from "@/types";
 import ApplicationLogo from "@/Components/ApplicationLogo";
-import { ReactNode } from "react";
 
 type Props = {
     links: MenuItemProp[];
-    isCollapsed?: boolean;
+    isCollapsed: boolean;
+    onToggleCollapse: () => void;
+    isMobile: boolean;
+    isSidebarOpen: boolean;
 };
 
 type MenuItemProps = {
@@ -37,7 +39,7 @@ const CollapsedMenuItem = ({ link, isActive }: MenuItemProps) => {
                         }),
                         "h-9 w-9",
                         link.variant === "default" &&
-                            "dark:bg-muted dark:text-muted-foreground dark:hover:bg-muted dark:hover:text-white"
+                        "dark:bg-muted dark:text-muted-foreground dark:hover:bg-muted dark:hover:text-white"
                     )}
                 >
                     {<Icon className="h-4 w-4" />}
@@ -68,46 +70,55 @@ const ExpandedMenuItem = ({ link, isActive }: MenuItemProps) => {
     );
 };
 
-const Sidebar = ({ links, isCollapsed }: Props) => {
+const Sidebar = ({ links, isCollapsed, onToggleCollapse, isMobile, isSidebarOpen }: Props) => {
     const { url } = usePage();
 
     return (
         <TooltipProvider>
-            <nav className="hidden bg-muted/40 md:block h-full">
-                <div className="flex h-full max-h-screen flex-col gap-2">
-                    <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
-                        <Link
-                            href="/"
-                            className={cn("flex items-center font-semibold", {
-                                "justify-center": isCollapsed,
-                            })}
-                        >
+            <nav className={cn(
+                "bg-background h-full",
+                isMobile
+                    ? cn("fixed inset-y-0 left-0 z-50 w-[250px] transition-transform duration-300 ease-in-out transform",
+                        isSidebarOpen ? "translate-x-0" : "-translate-x-full")
+                    : cn("relative", isCollapsed ? "w-[60px]" : "w-[250px]")
+            )}>
+                <div className="flex h-full flex-col">
+                    <div className="flex h-14 items-center border-b px-4 lg:h-[60px]">
+                        <Link href="/" className="flex items-center font-semibold">
                             <ApplicationLogo className="h-6 w-6 fill-current text-gray-500" />
-                            {!isCollapsed && (
-                                <span className="pl-2">Acme Inc</span>
-                            )}
+                            {(!isCollapsed || isMobile) && <span className="pl-2">Acme Inc</span>}
                         </Link>
                     </div>
-                    <div className="flex-1">
-                        <nav className="grid items-start space-y-2 text-sm font-medium lg:px-4">
+                    <div className="flex-1 overflow-y-auto border-r">
+                        <nav className="grid items-start gap-2 p-4 text-sm font-medium">
                             {links.map((link, index) =>
-                                isCollapsed ? (
+                                isCollapsed && !isMobile ? (
                                     <CollapsedMenuItem
                                         key={index}
                                         link={link}
-                                        isActive={link.href.includes(url)}
+                                        isActive={url.startsWith(link.href)}
                                     />
                                 ) : (
                                     <ExpandedMenuItem
                                         key={index}
                                         link={link}
-                                        isActive={link.href.includes(url)}
+                                        isActive={url.startsWith(link.href)}
                                     />
                                 )
                             )}
                         </nav>
                     </div>
                 </div>
+                {!isMobile && (
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={onToggleCollapse}
+                        className="absolute top-1/2 -right-3 transform -translate-y-1/2 bg-background border shadow-md"
+                    >
+                        {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+                    </Button>
+                )}
             </nav>
         </TooltipProvider>
     );

@@ -1,7 +1,7 @@
-import { PropsWithChildren, ReactNode, useState } from "react";
+import { PropsWithChildren, ReactNode, useState, useEffect } from "react";
 import { Link } from "@inertiajs/react";
 import { MenuItemProp, User } from "@/types";
-import { CircleUser, Search, UserIcon } from "lucide-react";
+import { ChevronLeft, ChevronRight, CircleUser, Search, UserIcon, Menu, X } from "lucide-react";
 import { Button } from "@/Components/ui/button";
 import {
     DropdownMenu,
@@ -46,52 +46,47 @@ export default function AuthenticatedLayout({
     user: User;
     header?: ReactNode;
 }>) {
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [isCollapsed, setIsCollapsed] = useState(false);
+    const [isMobile, setIsMobile] = useState(false);
+
+    useEffect(() => {
+        const mediaQuery = window.matchMedia('(min-width: 768px)');
+
+        const handleMediaQueryChange = (e: MediaQueryListEvent) => {
+            setIsMobile(!e.matches);
+            setIsSidebarOpen(e.matches);
+            setIsCollapsed(false);
+        };
+
+        handleMediaQueryChange({ matches: mediaQuery.matches } as MediaQueryListEvent);
+        mediaQuery.addEventListener('change', handleMediaQueryChange);
+
+        return () => mediaQuery.removeEventListener('change', handleMediaQueryChange);
+    }, []);
 
     return (
-        <ResizablePanelGroup
-            direction="horizontal"
-            className="h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr] fixed"
-        >
-            <ResizablePanel
-                defaultSize={14}
-                minSize={8}
-                maxSize={20}
-                collapsedSize={3.5}
-                collapsible={true}
-                onCollapse={() => {
-                    setIsCollapsed(true);
-                }}
-                onExpand={() => {
-                    setIsCollapsed(false);
-                }}
-                className={cn("min-w-[65px] hidden md:block", {
-                    "transition-all duration-300 ease-in-out": isCollapsed,
-                })}
-            >
-                <Sidebar links={links} isCollapsed={isCollapsed} />
-            </ResizablePanel>
+        <div className="flex h-screen overflow-hidden">
+            <Sidebar
+                links={links}
+                isCollapsed={!isMobile && isCollapsed}
+                onToggleCollapse={() => !isMobile && setIsCollapsed(!isCollapsed)}
+                isMobile={isMobile}
+                isSidebarOpen={isSidebarOpen}
+            />
 
-            <ResizableHandle withHandle className={"hidden md:flex"} />
-
-            <ResizablePanel className="h-full w-full flex flex-col">
-                <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
-                    <MobileMenu links={links} />
-
-                    <div className="w-full flex-1 flex gap-4 justify-between items-center">
-                        <form className="flex-1">
-                            <div className="relative">
-                                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                                <Input
-                                    type="search"
-                                    placeholder="Search products..."
-                                    className="w-full appearance-none bg-background pl-8 shadow-none md:w-2/3 lg:w-1/3"
-                                />
-                            </div>
-                        </form>
-
+            <div className="flex-1 flex flex-col overflow-hidden">
+                <header className="flex h-14 items-center gap-4 border-b bg-background px-4 lg:h-[60px] lg:px-6">
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                        className="mr-2 md:hidden"
+                    >
+                        {isSidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+                    </Button>
+                    <div className="w-full flex-1 flex gap-4 justify-end items-center">
                         <div className="space-x-4">
-                            <ThemeSwitcher />
                             <AppearanceDropdown />
 
                             <DropdownMenu>
@@ -147,12 +142,20 @@ export default function AuthenticatedLayout({
                     </div>
                 </header>
 
-                <ScrollArea className="px-6 pt-6 flex-1">
-                    <div className="pb-4">{header}</div>
+                <main className="flex-1 overflow-y-auto bg-background">
+                    <div className="container mx-auto py-6">
+                        {header}
+                        {children}
+                    </div>
+                </main>
+            </div>
 
-                    <div className="mb-6">{children}</div>
-                </ScrollArea>
-            </ResizablePanel>
-        </ResizablePanelGroup>
+            {isMobile && isSidebarOpen && (
+                <div
+                    className="fixed inset-0 bg-black/50 z-40"
+                    onClick={() => setIsSidebarOpen(false)}
+                />
+            )}
+        </div>
     );
 }
