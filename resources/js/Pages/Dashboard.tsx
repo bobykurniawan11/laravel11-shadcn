@@ -14,7 +14,9 @@ export default function Dashboard({ auth }: PageProps) {
         >
             <Head title="Dashboard" />
 
-            <div className="flex flex-col gap-4 md:gap-8"></div>
+            <div className="flex flex-col gap-4 md:gap-8">
+                <p>asdf</p>
+            </div>
         </AuthenticatedLayout>
     );
 }
